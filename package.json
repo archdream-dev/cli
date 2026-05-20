@@ -1,0 +1,30 @@
+{
+  "name": "archdream",
+  "version": "1.0.0",
+  "description": "CLI that scaffolds folder structures from architecture presets",
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "archdream": "bin/archdream"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "architectures"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "cli",
+    "scaffold",
+    "architecture"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@clack/prompts": "^0.10.1",
+    "js-yaml": "^4.1.0"
+  }
+}

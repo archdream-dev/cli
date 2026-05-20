@@ -1,0 +1,10 @@
+id: layered
+name: Layered Architecture
+description: Controller → Service → Repository
+tree:
+  - config
+  - controller
+  - service
+  - repository
+  - model
+  - mapper

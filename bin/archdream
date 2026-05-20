@@ -1,0 +1,77 @@
+#!/usr/bin/env node
+
+import path from "node:path";
+import process from "node:process";
+import * as p from "@clack/prompts";
+import { generate } from "../lib/generate.js";
+import { loadArchitectures } from "../lib/load-architectures.js";
+import { confirmNonEmpty, promptArchitecture } from "../lib/prompts.js";
+
+function printArchitectures(architectures) {
+  for (const arch of architectures) {
+    console.log(`${arch.id}\t${arch.name}`);
+    console.log(`  ${arch.description}`);
+    console.log(`  dirs: ${arch.tree.join(", ")}`);
+  }
+}
+
+function resolveTargetDir(arg) {
+  if (!arg) return process.cwd();
+  return path.resolve(process.cwd(), arg);
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+  const command = args[0];
+
+  let architectures;
+  try {
+    architectures = loadArchitectures();
+  } catch (err) {
+    console.error(`Failed to load architectures: ${err.message}`);
+    process.exit(1);
+  }
+
+  if (command === "list") {
+    printArchitectures(architectures);
+    return;
+  }
+
+  const targetArg = command && command !== "list" ? command : undefined;
+  const targetDir = resolveTargetDir(targetArg);
+
+  p.intro("archdream");
+
+  await confirmNonEmpty(targetDir);
+
+  const architecture = await promptArchitecture(architectures);
+
+  const spinner = p.spinner();
+  spinner.start(`Generating ${architecture.name}…`);
+
+  const { created, skipped } = generate(architecture, targetDir);
+
+  spinner.stop("Done.");
+
+  p.note(
+    [
+      `Target: ${targetDir}`,
+      `Architecture: ${architecture.name}`,
+      "",
+      created.dirs.length ? `Created dirs:\n  ${created.dirs.join("\n  ")}` : "",
+      skipped.dirs.length
+        ? `Skipped dirs (exist):\n  ${skipped.dirs.join("\n  ")}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+    "Summary",
+  );
+
+  p.outro(`Scaffold ready at ${targetDir}`);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

@@ -1,0 +1,11 @@
+id: clean
+name: Clean Architecture
+description: Domain at the center; dependencies point inward
+tree:
+  - domain
+  - application/dto
+  - application/usecase
+  - application/exception
+  - infrastructure/config
+  - infrastructure/adapter/jpa
+  - infrastructure/adapter/rest
