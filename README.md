@@ -1,6 +1,8 @@
-# archdream
+# archdream-cli
 
-Terminal CLI that scaffolds folder structures from architecture presets.
+CLI that scaffolds folder structures from architecture presets. Published on npm as [`archdream`](https://www.npmjs.com/package/archdream).
+
+Run it from the folder where you want the layout (e.g. `src/`). Folders are created in the current directory — no extra wrapper paths.
 
 ## Install
 
@@ -40,99 +42,72 @@ Alternatively, use [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://github.
 ## Usage
 
 ```bash
-# From the folder where you want the layout (e.g. src/)
 cd src
 archdream
 
-# Or pass a target directory (created if missing)
 archdream ./src
-
-# List built-in architectures
 archdream list
 ```
 
-## Example session
+## Example
 
 ```text
 $ mkdir -p my-app/src && cd my-app/src
 $ archdream
-
-┌  archdream
-│
-◇  Choose an architecture
-│  Clean Architecture
-│
-◇  Done.
-│
-└  Scaffold ready at .../my-app/src
 ```
 
-Result (clean, created directly in `src/`):
+**Layered** — classic backend tiers plus shared pieces:
 
 ```text
-src/
-├── domain/
-├── application/
-│   ├── dto/
-│   ├── usecase/
-│   └── exception/
-└── infrastructure/
-    ├── config/
-    └── adapter/
-        ├── jpa/
-        └── rest/
+config/
+controller/
+service/
+repository/
+model/
+mapper/
 ```
 
-Result (layered):
+**Clean** — domain at the center, application orchestration, infrastructure adapters:
 
 ```text
-src/
-├── config/
-├── controller/
-├── service/
-├── repository/
-├── model/
-└── mapper/
+domain/
+application/dto/
+application/usecase/
+application/exception/
+infrastructure/config/
+infrastructure/adapter/jpa/
+infrastructure/adapter/rest/
 ```
 
 ## Architectures
 
-Definitions live in `architectures/*.yaml` — edit YAML to change folder trees without touching generator code.
+### Layered
 
-| id      | name                 | layout |
-|---------|----------------------|--------|
-| layered | Layered Architecture | `config/`, `controller/`, `service/`, `repository/`, `model/`, `mapper/` |
-| clean   | Clean Architecture   | `domain/`, `application/{dto,usecase,exception}/`, `infrastructure/config/`, `infrastructure/adapter/{jpa,rest}/` |
+Controller → service → repository flow, with config, model, and mapper folders.
 
-## Behavior
+- `config/`
+- `controller/`
+- `service/`
+- `repository/`
+- `model/`
+- `mapper/`
 
-- Loads all `architectures/*.yaml` at runtime
-- Run from the folder where you want the layout; folders are created there (no extra `src/` wrapper in the paths)
-- Prompts for architecture, then `mkdir -p` for each `tree` entry (folders only, no files)
-- If the target directory is not empty, asks once to abort or continue; never overwrites existing paths
+### Clean
 
-## Development
+Domain, application layer (DTOs, use cases, exceptions), and infrastructure (config, JPA/REST adapters). Pragmatic layout — dependencies point inward without over-splitting packages.
 
-Clone the repo and link locally (for contributors):
+- `domain/`
+- `application/dto/`
+- `application/usecase/`
+- `application/exception/`
+- `infrastructure/config/`
+- `infrastructure/adapter/jpa/`
+- `infrastructure/adapter/rest/`
 
-```bash
-git clone <repo-url>
-cd archdream
-npm install
-npm link
-```
+---
 
-If `npm link` hits `EACCES`, fix your npm prefix (see [Permission errors](#permission-errors-on-global-install)) or use:
-
-```bash
-alias archdream='node /absolute/path/to/archdream/bin/archdream'
-```
-
-Publish a new version:
-
-```bash
-npm login
-npm publish
-```
-
-Bump `version` in `package.json` before each publish.
+<p align="center">
+  <b>Omar Ismayilov</b><br>
+  <i>Software Engineer • Backend & System Design Enthusiast</i><br>
+  Building reliable systems with simplicity and architecture in mind.
+</p>
