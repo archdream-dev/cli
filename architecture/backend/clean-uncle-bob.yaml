@@ -1,0 +1,9 @@
+id: clean-uncle-bob
+name: Clean Architecture - Uncle Bob
+description: Four rings; dependencies point inward (language-agnostic)
+tree:
+  - entities
+  - use-cases
+  - interface-adapters/inbound
+  - interface-adapters/outbound
+  - frameworks-drivers

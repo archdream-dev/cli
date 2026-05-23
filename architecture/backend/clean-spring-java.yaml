@@ -1,6 +1,6 @@
-id: clean
-name: Clean Architecture
-description: Domain at the center; dependencies point inward
+id: clean-spring-java
+name: Clean Architecture - Spring/Java
+description: Domain at the center with JPA and REST adapters (typical Spring Boot)
 tree:
   - domain
   - application/dto

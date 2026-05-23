@@ -1,6 +1,6 @@
 # archdream-cli
 
-CLI that scaffolds folder structures from presets. Published on npm as [`archdream`](https://www.npmjs.com/package/archdream).
+CLI that scaffolds folder structures from architecture presets. Published on npm as [`archdream`](https://www.npmjs.com/package/archdream).
 
 Run it from the folder where you want the layout (e.g. `src/`). Folders are created in the current directory — no extra wrapper paths.
 

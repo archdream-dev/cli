@@ -4,14 +4,26 @@ import path from "node:path";
 import process from "node:process";
 import * as p from "@clack/prompts";
 import { generate } from "../lib/generate.js";
-import { loadArchitectures } from "../lib/load-architectures.js";
-import { confirmNonEmpty, promptArchitecture } from "../lib/prompts.js";
+import { loadArchitectures, SCOPES } from "../lib/load-architectures.js";
+import { confirmNonEmpty, promptArchitecture, promptScope } from "../lib/prompts.js";
+
+const SCOPE_LABELS = {
+  backend: "Backend",
+  frontend: "Frontend",
+};
 
 function printArchitectures(architectures) {
-  for (const arch of architectures) {
-    console.log(`${arch.id}\t${arch.name}`);
-    console.log(`  ${arch.description}`);
-    console.log(`  dirs: ${arch.tree.join(", ")}`);
+  for (const scope of SCOPES) {
+    const scoped = architectures.filter((arch) => arch.scope === scope);
+    if (!scoped.length) continue;
+
+    console.log(`${SCOPE_LABELS[scope] ?? scope}:`);
+    for (const arch of scoped) {
+      console.log(`  ${arch.id}\t${arch.name}`);
+      console.log(`    ${arch.description}`);
+      console.log(`    dirs: ${arch.tree.join(", ")}`);
+    }
+    console.log();
   }
 }
 
@@ -44,7 +56,15 @@ async function main() {
 
   await confirmNonEmpty(targetDir);
 
-  const architecture = await promptArchitecture(architectures);
+  const scope = await promptScope();
+  const scopedArchitectures = loadArchitectures({ scope });
+
+  if (!scopedArchitectures.length) {
+    p.cancel(`No architectures found for ${SCOPE_LABELS[scope] ?? scope}.`);
+    process.exit(1);
+  }
+
+  const architecture = await promptArchitecture(scopedArchitectures);
 
   const spinner = p.spinner();
   spinner.start(`Generating ${architecture.name}…`);
@@ -56,6 +76,7 @@ async function main() {
   p.note(
     [
       `Target: ${targetDir}`,
+      `Scope: ${SCOPE_LABELS[architecture.scope] ?? architecture.scope}`,
       `Architecture: ${architecture.name}`,
       "",
       created.dirs.length ? `Created dirs:\n  ${created.dirs.join("\n  ")}` : "",

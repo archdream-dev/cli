@@ -1,0 +1,15 @@
+id: clean-advanced
+name: Clean Architecture - Advanced
+description: Explicit ports and adapters; persistence and messaging without framework-specific paths
+tree:
+  - domain/entity
+  - domain/value-object
+  - domain/event
+  - application/port/inbound
+  - application/port/outbound
+  - application/usecase
+  - application/dto
+  - infrastructure/adapter/inbound/http
+  - infrastructure/adapter/outbound/persistence
+  - infrastructure/adapter/outbound/messaging
+  - infrastructure/config
