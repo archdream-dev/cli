@@ -3,16 +3,19 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import yaml from "js-yaml";
 
+import { SCOPES, type Architecture, type ArchitectureYaml, type Scope } from "./types.js";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ARCHITECTURE_DIR = path.join(__dirname, "..", "architecture");
 
-export const SCOPES = ["backend", "frontend"];
+export { SCOPES };
+export type { Scope };
 
-export function getArchitectureDir() {
+export function getArchitectureDir(): string {
   return ARCHITECTURE_DIR;
 }
 
-function readScopeArchitectures(scope) {
+function readScopeArchitectures(scope: Scope): Architecture[] {
   const scopeDir = path.join(ARCHITECTURE_DIR, scope);
 
   if (!fs.existsSync(scopeDir)) {
@@ -21,29 +24,33 @@ function readScopeArchitectures(scope) {
 
   const files = fs
     .readdirSync(scopeDir)
-    .filter((f) => f.endsWith(".yaml") || f.endsWith(".yml"))
+    .filter((f: string) => f.endsWith(".yaml") || f.endsWith(".yml"))
     .sort();
 
-  return files.map((file) => {
+  return files.map((file: string) => {
     const raw = fs.readFileSync(path.join(scopeDir, file), "utf8");
-    const arch = yaml.load(raw);
+    const arch = yaml.load(raw) as ArchitectureYaml | null;
 
     if (!arch?.id || !arch?.name) {
       throw new Error(`Invalid architecture file: ${scope}/${file} (missing id or name)`);
     }
 
-    arch.scope = scope;
-    arch.tree = arch.tree ?? [];
-    return arch;
+    return {
+      id: arch.id,
+      name: arch.name,
+      description: arch.description ?? "",
+      scope,
+      tree: arch.tree ?? [],
+    };
   });
 }
 
-export function loadArchitectures({ scope } = {}) {
+export function loadArchitectures(options: { scope?: Scope } = {}): Architecture[] {
   const architectures = SCOPES.flatMap((s) => readScopeArchitectures(s));
 
-  if (!scope) {
+  if (!options.scope) {
     return architectures;
   }
 
-  return architectures.filter((arch) => arch.scope === scope);
+  return architectures.filter((arch) => arch.scope === options.scope);
 }

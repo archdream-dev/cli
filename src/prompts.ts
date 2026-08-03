@@ -1,30 +1,34 @@
 import * as p from "@clack/prompts";
-import { SCOPES } from "./load-architectures.js";
+import process from "node:process";
+
 import { isDirEmpty } from "./generate.js";
+import { SCOPES } from "./load-architectures.js";
+import { SCOPE_LABELS, type Architecture, type Scope } from "./types.js";
 
-const SCOPE_LABELS = {
-  backend: "Backend",
-  frontend: "Frontend",
-};
+function exit(code = 0): never {
+  process.exit(code);
+}
 
-export async function promptScope() {
+export async function promptScope(): Promise<Scope> {
   const selected = await p.select({
     message: "Choose project scope",
     options: SCOPES.map((scope) => ({
       value: scope,
-      label: SCOPE_LABELS[scope] ?? scope,
+      label: SCOPE_LABELS[scope],
     })),
   });
 
   if (p.isCancel(selected)) {
     p.cancel("Cancelled.");
-    process.exit(0);
+    exit(0);
   }
 
   return selected;
 }
 
-export async function promptArchitecture(architectures) {
+export async function promptArchitecture(
+  architectures: Architecture[],
+): Promise<Architecture> {
   const selected = await p.select({
     message: "Choose an architecture",
     options: architectures.map((arch) => ({
@@ -36,13 +40,19 @@ export async function promptArchitecture(architectures) {
 
   if (p.isCancel(selected)) {
     p.cancel("Cancelled.");
-    process.exit(0);
+    exit(0);
   }
 
-  return architectures.find((a) => a.id === selected);
+  const architecture = architectures.find((a) => a.id === selected);
+  if (!architecture) {
+    p.cancel("Architecture not found.");
+    exit(1);
+  }
+
+  return architecture;
 }
 
-export async function confirmNonEmpty(targetDir) {
+export async function confirmNonEmpty(targetDir: string): Promise<true> {
   if (isDirEmpty(targetDir)) return true;
 
   const choice = await p.select({
@@ -55,7 +65,7 @@ export async function confirmNonEmpty(targetDir) {
 
   if (p.isCancel(choice) || choice === "abort") {
     p.cancel("Aborted.");
-    process.exit(0);
+    exit(0);
   }
 
   return true;

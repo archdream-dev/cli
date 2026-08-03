@@ -7,13 +7,18 @@
     "access": "public"
   },
   "bin": {
-    "archdream": "bin/archdream"
+    "archdream": "dist/cli.js"
   },
   "files": [
-    "bin",
-    "lib",
+    "dist",
     "architecture"
   ],
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
+    "start": "node dist/cli.js",
+    "dev": "tsx src/cli.ts"
+  },
   "engines": {
     "node": ">=18"
   },
@@ -26,5 +31,11 @@
   "dependencies": {
     "@clack/prompts": "^0.10.1",
     "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
   }
 }

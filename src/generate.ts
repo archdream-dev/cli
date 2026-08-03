@@ -1,14 +1,16 @@
 import fs from "node:fs";
 import path from "node:path";
 
-function isDirEmpty(dir) {
+import type { Architecture, GenerateResult } from "./types.js";
+
+export function isDirEmpty(dir: string): boolean {
   if (!fs.existsSync(dir)) return true;
   return fs.readdirSync(dir).length === 0;
 }
 
-export function generate(architecture, targetDir) {
-  const created = { dirs: [] };
-  const skipped = { dirs: [] };
+export function generate(architecture: Architecture, targetDir: string): GenerateResult {
+  const created = { dirs: [] as string[] };
+  const skipped = { dirs: [] as string[] };
 
   fs.mkdirSync(targetDir, { recursive: true });
 
@@ -24,5 +26,3 @@ export function generate(architecture, targetDir) {
 
   return { created, skipped };
 }
-
-export { isDirEmpty };

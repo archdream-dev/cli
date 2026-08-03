@@ -3,21 +3,18 @@
 import path from "node:path";
 import process from "node:process";
 import * as p from "@clack/prompts";
-import { generate } from "../lib/generate.js";
-import { loadArchitectures, SCOPES } from "../lib/load-architectures.js";
-import { confirmNonEmpty, promptArchitecture, promptScope } from "../lib/prompts.js";
 
-const SCOPE_LABELS = {
-  backend: "Backend",
-  frontend: "Frontend",
-};
+import { generate } from "./generate.js";
+import { loadArchitectures, SCOPES } from "./load-architectures.js";
+import { confirmNonEmpty, promptArchitecture, promptScope } from "./prompts.js";
+import { SCOPE_LABELS, type Architecture } from "./types.js";
 
-function printArchitectures(architectures) {
+function printArchitectures(architectures: Architecture[]): void {
   for (const scope of SCOPES) {
     const scoped = architectures.filter((arch) => arch.scope === scope);
     if (!scoped.length) continue;
 
-    console.log(`${SCOPE_LABELS[scope] ?? scope}:`);
+    console.log(`${SCOPE_LABELS[scope]}:`);
     for (const arch of scoped) {
       console.log(`  ${arch.id}\t${arch.name}`);
       console.log(`    ${arch.description}`);
@@ -27,22 +24,25 @@ function printArchitectures(architectures) {
   }
 }
 
-function resolveTargetDir(arg) {
+function resolveTargetDir(arg: string | undefined): string {
   if (!arg) return process.cwd();
   return path.resolve(process.cwd(), arg);
 }
 
-async function main() {
-  const args = process.argv.slice(2);
-  const command = args[0];
-
-  let architectures;
+function loadOrExit(): Architecture[] {
   try {
-    architectures = loadArchitectures();
+    return loadArchitectures();
   } catch (err) {
-    console.error(`Failed to load architectures: ${err.message}`);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`Failed to load architectures: ${message}`);
     process.exit(1);
   }
+}
+
+async function main(): Promise<void> {
+  const args = process.argv.slice(2);
+  const command = args[0];
+  const architectures = loadOrExit();
 
   if (command === "list") {
     printArchitectures(architectures);
@@ -60,7 +60,7 @@ async function main() {
   const scopedArchitectures = loadArchitectures({ scope });
 
   if (!scopedArchitectures.length) {
-    p.cancel(`No architectures found for ${SCOPE_LABELS[scope] ?? scope}.`);
+    p.cancel(`No architectures found for ${SCOPE_LABELS[scope]}.`);
     process.exit(1);
   }
 
@@ -76,7 +76,7 @@ async function main() {
   p.note(
     [
       `Target: ${targetDir}`,
-      `Scope: ${SCOPE_LABELS[architecture.scope] ?? architecture.scope}`,
+      `Scope: ${SCOPE_LABELS[architecture.scope]}`,
       `Architecture: ${architecture.name}`,
       "",
       created.dirs.length ? `Created dirs:\n  ${created.dirs.join("\n  ")}` : "",
@@ -92,7 +92,7 @@ async function main() {
   p.outro(`Scaffold ready at ${targetDir}`);
 }
 
-main().catch((err) => {
+main().catch((err: unknown) => {
   console.error(err);
   process.exit(1);
 });
