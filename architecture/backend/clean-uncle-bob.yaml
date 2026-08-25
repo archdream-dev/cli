@@ -4,6 +4,7 @@ description: Four rings; dependencies point inward (language-agnostic)
 tree:
   - entities
   - use-cases
-  - interface-adapters/inbound
-  - interface-adapters/outbound
+  - interface-adapters/controller
+  - interface-adapters/presenter
+  - interface-adapters/gateway
   - frameworks-drivers

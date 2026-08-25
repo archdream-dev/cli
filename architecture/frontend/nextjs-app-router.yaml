@@ -1,10 +1,13 @@
 id: nextjs-app-router
 name: Next.js - App Router
-description: App Router with shared UI, lib, and hooks (run from project root or src/)
+description: Adds structure on top of a default create-next-app setup (run from project root or src/)
 tree:
-  - app
+  - app/api
   - components/ui
   - components/features
+  - components/layout
   - lib
   - hooks
   - types
+  - styles
+  - constants

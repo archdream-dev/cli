@@ -1,0 +1,13 @@
+id: react-feature-sliced
+name: React - Feature-Sliced Design
+description: FSD layers; imports only point downward (run from project root or src/)
+tree:
+  - app
+  - pages
+  - widgets
+  - features
+  - entities
+  - shared/ui
+  - shared/lib
+  - shared/api
+  - shared/config
