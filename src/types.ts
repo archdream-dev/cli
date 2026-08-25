@@ -1,6 +1,6 @@
-export const SCOPES = ["backend", "frontend"] as const;
+export const BUILTIN_SCOPES = ["backend", "frontend"] as const;
 
-export type Scope = (typeof SCOPES)[number];
+export type Scope = string;
 
 export interface Architecture {
   id: string;
@@ -22,7 +22,11 @@ export interface GenerateResult {
   skipped: { dirs: string[] };
 }
 
-export const SCOPE_LABELS: Record<Scope, string> = {
+export const SCOPE_LABELS: Partial<Record<Scope, string>> = {
   backend: "Backend",
   frontend: "Frontend",
 };
+
+export function scopeLabel(scope: Scope): string {
+  return SCOPE_LABELS[scope] ?? scope.charAt(0).toUpperCase() + scope.slice(1);
+}

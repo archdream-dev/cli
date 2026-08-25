@@ -1,0 +1,15 @@
+id: onion
+name: Onion Architecture
+description: Concentric layers; domain at the core with no outward dependencies
+tree:
+  - domain/entity
+  - domain/service
+  - domain/repository
+  - domain/exception
+  - application/service
+  - application/dto
+  - interfaces/controller
+  - interfaces/presenter
+  - infrastructure/persistence
+  - infrastructure/external
+  - infrastructure/config

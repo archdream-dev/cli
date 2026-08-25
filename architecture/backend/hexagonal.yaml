@@ -1,8 +1,8 @@
-id: clean-advanced
-name: Clean Architecture - Advanced
+id: hexagonal
+name: Hexagonal Architecture (Ports & Adapters)
 description: Explicit ports and adapters; persistence and messaging without framework-specific paths
 tree:
-  - domain/entity
+  - domain/model
   - domain/value-object
   - domain/event
   - application/port/inbound
