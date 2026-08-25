@@ -3,50 +3,80 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import yaml from "js-yaml";
 
-import { SCOPES, type Architecture, type ArchitectureYaml, type Scope } from "./types.js";
+import { getCustomDir } from "./snapshot.js";
+import {
+  BUILTIN_SCOPES,
+  type Architecture,
+  type ArchitectureYaml,
+  type Scope,
+} from "./types.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ARCHITECTURE_DIR = path.join(__dirname, "..", "architecture");
 
-export { SCOPES };
+export { BUILTIN_SCOPES as SCOPES };
 export type { Scope };
 
 export function getArchitectureDir(): string {
   return ARCHITECTURE_DIR;
 }
 
-function readScopeArchitectures(scope: Scope): Architecture[] {
-  const scopeDir = path.join(ARCHITECTURE_DIR, scope);
+export function getScopes(): Scope[] {
+  const scopes = new Set<Scope>(BUILTIN_SCOPES);
+  const customDir = getCustomDir();
 
-  if (!fs.existsSync(scopeDir)) {
-    return [];
+  if (fs.existsSync(customDir)) {
+    for (const entry of fs.readdirSync(customDir, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        scopes.add(entry.name);
+      }
+    }
   }
 
-  const files = fs
-    .readdirSync(scopeDir)
-    .filter((f: string) => f.endsWith(".yaml") || f.endsWith(".yml"))
-    .sort();
+  return [...scopes];
+}
 
-  return files.map((file: string) => {
-    const raw = fs.readFileSync(path.join(scopeDir, file), "utf8");
-    const arch = yaml.load(raw) as ArchitectureYaml | null;
+function readScopeArchitectures(scope: Scope): Architecture[] {
+  const scopeDirs = [
+    path.join(ARCHITECTURE_DIR, scope),
+    path.join(getCustomDir(), scope),
+  ];
 
-    if (!arch?.id || !arch?.name) {
-      throw new Error(`Invalid architecture file: ${scope}/${file} (missing id or name)`);
+  const architectures: Architecture[] = [];
+
+  for (const scopeDir of scopeDirs) {
+    if (!fs.existsSync(scopeDir)) {
+      continue;
     }
 
-    return {
-      id: arch.id,
-      name: arch.name,
-      description: arch.description ?? "",
-      scope,
-      tree: arch.tree ?? [],
-    };
-  });
+    const files = fs
+      .readdirSync(scopeDir)
+      .filter((f: string) => f.endsWith(".yaml") || f.endsWith(".yml"))
+      .sort();
+
+    for (const file of files) {
+      const raw = fs.readFileSync(path.join(scopeDir, file), "utf8");
+      const arch = yaml.load(raw) as ArchitectureYaml | null;
+
+      if (!arch?.id || !arch?.name) {
+        throw new Error(`Invalid architecture file: ${scope}/${file} (missing id or name)`);
+      }
+
+      architectures.push({
+        id: arch.id,
+        name: arch.name,
+        description: arch.description ?? "",
+        scope,
+        tree: arch.tree ?? [],
+      });
+    }
+  }
+
+  return architectures;
 }
 
 export function loadArchitectures(options: { scope?: Scope } = {}): Architecture[] {
-  const architectures = SCOPES.flatMap((s) => readScopeArchitectures(s));
+  const architectures = getScopes().flatMap((s) => readScopeArchitectures(s));
 
   if (!options.scope) {
     return architectures;

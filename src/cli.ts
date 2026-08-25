@@ -1,20 +1,22 @@
 #!/usr/bin/env node
 
+import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import * as p from "@clack/prompts";
 
 import { generate } from "./generate.js";
-import { loadArchitectures, SCOPES } from "./load-architectures.js";
-import { confirmNonEmpty, promptArchitecture, promptScope } from "./prompts.js";
-import { SCOPE_LABELS, type Architecture } from "./types.js";
+import { getScopes, loadArchitectures } from "./load-architectures.js";
+import { confirmNonEmpty, promptArchitecture, promptScope, sanitizeScopeName } from "./prompts.js";
+import { listCustomSnapshots, removeSnapshot, saveArchitecture, snapshotToArchitecture } from "./snapshot.js";
+import { scopeLabel, type Architecture, type Scope } from "./types.js";
 
 function printArchitectures(architectures: Architecture[]): void {
-  for (const scope of SCOPES) {
+  for (const scope of getScopes()) {
     const scoped = architectures.filter((arch) => arch.scope === scope);
     if (!scoped.length) continue;
 
-    console.log(`${SCOPE_LABELS[scope]}:`);
+    console.log(`${scopeLabel(scope)}:`);
     for (const arch of scoped) {
       console.log(`  ${arch.id}\t${arch.name}`);
       console.log(`    ${arch.description}`);
@@ -39,20 +41,162 @@ function loadOrExit(): Architecture[] {
   }
 }
 
+async function createSnapshot(
+  name: string,
+  targetArg: string | undefined,
+  scopeArg: string | undefined,
+): Promise<void> {
+  const targetDir = resolveTargetDir(targetArg);
+
+  let scope: Scope;
+  if (scopeArg) {
+    const sanitized = sanitizeScopeName(scopeArg);
+    if (!sanitized) {
+      console.error(`Invalid scope name: ${scopeArg}`);
+      process.exit(1);
+    }
+    scope = sanitized;
+  } else {
+    scope = await promptScope();
+  }
+
+  try {
+    const arch = snapshotToArchitecture(targetDir, name, scope);
+    const filePath = saveArchitecture(arch);
+    p.outro(`Snapshot saved: ${filePath} (${arch.tree.length} dirs)`);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    p.cancel(message);
+    process.exit(1);
+  }
+}
+
+async function removeSnapshotCommand(
+  name: string | undefined,
+  scopeArg: string | undefined,
+): Promise<void> {
+  let id = name;
+  let scope = scopeArg;
+
+  if (!id) {
+    const snapshots = listCustomSnapshots();
+    if (!snapshots.length) {
+      p.cancel("No custom snapshots found.");
+      process.exit(1);
+    }
+
+    const selected = await p.select({
+      message: "Choose a snapshot to remove",
+      options: snapshots.map((s) => ({
+        value: `${s.scope}/${s.id}`,
+        label: s.id,
+        hint: `scope: ${s.scope}`,
+      })),
+    });
+
+    if (p.isCancel(selected)) {
+      p.cancel("Cancelled.");
+      process.exit(0);
+    }
+
+    [scope, id] = selected.split("/");
+  }
+
+  if (!id) {
+    p.cancel("Snapshot id is required.");
+    process.exit(1);
+  }
+
+  try {
+    const filePath = removeSnapshot(id, scope);
+    p.outro(`Removed snapshot: ${filePath}`);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    p.cancel(message);
+    process.exit(1);
+  }
+}
+
+function printHelp(): void {  console.log(`Archdream CLI - scaffold folder structures from architecture presets
+
+Usage:
+  archdream [target-dir]              Scaffold a folder structure (dir is created if missing)
+  archdream list                      List all available architectures
+  archdream create snapshot [name] [target-dir] [--scope <scope>]
+                                      Save the target's folder structure as a reusable architecture
+                                      (defaults: name = current folder name, target = current directory)
+  archdream remove snapshot [name] [--scope <scope>]
+                                      Delete a custom snapshot (interactive picker if name is omitted)
+  archdream help                      Show this help message
+
+Examples:
+  archdream my-app
+  archdream create snapshot my-backend my-project
+  archdream create snapshot            Snapshot current directory as <folder-name>
+  archdream remove snapshot my-backend --scope backend
+`);
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
+  const scopeFlagIndex = args.indexOf("--scope");
+  const scopeArg = scopeFlagIndex !== -1 ? args.splice(scopeFlagIndex, 2)[1] : undefined;
   const command = args[0];
   const architectures = loadOrExit();
+
+  if (command === "help" || command === "--help" || command === "-h") {
+    printHelp();
+    return;
+  }
 
   if (command === "list") {
     printArchitectures(architectures);
     return;
   }
 
+  if (command === "create") {
+    if (args[1] !== "snapshot") {
+      console.error(
+        `Unknown subcommand: archdream create ${args[1] ?? ""}\nDid you mean "archdream create snapshot <name>"? Run "archdream help" for usage.`,      );
+      process.exit(1);
+    }
+    const name = args[2];
+    const targetArg = args[3];
+
+    if (!name && targetArg) {
+      console.error("Usage: archdream create snapshot [name] [target-dir]");
+      process.exit(1);
+    }
+
+    const resolvedName =
+      name ?? path.basename(path.resolve(process.cwd(), targetArg ?? "."));
+
+    await createSnapshot(resolvedName, targetArg, scopeArg);
+    return;
+  }
+
+  if (command === "remove") {
+    if (args[1] !== "snapshot") {
+      console.error(
+        `Unknown subcommand: archdream remove ${args[1] ?? ""}\nDid you mean "archdream remove snapshot <name>"? Run "archdream help" for usage.`,
+      );
+      process.exit(1);
+    }
+    await removeSnapshotCommand(args[2], scopeArg);
+    return;
+  }
+
+  if (command && command.startsWith("-")) {
+    console.error(
+      `Archdream CLI does not have option "${command}".\nRun "archdream help" to see available commands.`,
+    );
+    process.exit(1);
+  }
+
   const targetArg = command && command !== "list" ? command : undefined;
   const targetDir = resolveTargetDir(targetArg);
 
-  p.intro("archdream");
+  p.intro("Archdream CLI");
 
   await confirmNonEmpty(targetDir);
 
@@ -60,7 +204,7 @@ async function main(): Promise<void> {
   const scopedArchitectures = loadArchitectures({ scope });
 
   if (!scopedArchitectures.length) {
-    p.cancel(`No architectures found for ${SCOPE_LABELS[scope]}.`);
+    p.cancel(`No architectures found for ${scopeLabel(scope)}.`);
     process.exit(1);
   }
 
@@ -76,7 +220,7 @@ async function main(): Promise<void> {
   p.note(
     [
       `Target: ${targetDir}`,
-      `Scope: ${SCOPE_LABELS[architecture.scope]}`,
+      `Scope: ${scopeLabel(architecture.scope)}`,
       `Architecture: ${architecture.name}`,
       "",
       created.dirs.length ? `Created dirs:\n  ${created.dirs.join("\n  ")}` : "",
