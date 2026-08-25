@@ -19,10 +19,10 @@ npm i -g archdream
 
 ### Usage
 
-Run from the folder where you want the layout, or pass a path
-
-Example:
+Run from the folder where you want the layout, or pass a path:
 
 ```bash
-archdream ./src
+archdream src
 ```
+
+Run `archdream help` (or `-h`, `--help`) for command guidance and examples.
