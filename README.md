@@ -1,7 +1,11 @@
+<div align="center">
+
 # Archdream CLI
 
 [![Release](https://img.shields.io/github/v/release/archdream-dev/cli?style=flat-square)](https://github.com/archdream-dev/cli/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-orange)](./LICENSE)
+
+</div>
 
 CLI that scaffolds folder structures from architecture presets.
 
