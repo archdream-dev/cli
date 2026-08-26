@@ -12,9 +12,8 @@ CLI that scaffolds folder structures from architecture presets.
 ## Features
 
 - Interactive preset picker
-- Ready-made layouts 
-- Creates folders in place — missing paths only; existing ones are left alone
-- Preview presets with `archdream list`
+- Ready-made layouts
+- Snapshot any existing project's structure as a reusable preset
 
 ## Quick start
 
