@@ -5,11 +5,11 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 
-import { getScopes, loadArchitectures } from "../src/load-architectures.js";
-import { saveArchitecture, snapshotToArchitecture, getCustomDir } from "../src/snapshot.js";
-import { sanitizeScopeName } from "../src/prompts.js";
+import { getScopes, loadArchitectures } from "../main/load-architectures.js";
+import { saveArchitecture, snapshotToArchitecture, getCustomDir } from "../main/snapshot.js";
+import { sanitizeScopeName } from "../main/prompts.js";
 
-const CLI = path.resolve(import.meta.dirname, "..", "dist", "cli.js");
+const CLI = path.resolve(import.meta.dirname, "..", "..", "dist", "cli.js");
 
 test("custom scope round-trip: snapshot then scaffold-load", () => {
   // Arrange

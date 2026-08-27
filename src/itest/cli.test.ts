@@ -5,7 +5,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 
-const CLI = path.resolve(import.meta.dirname, "..", "dist", "cli.js");
+const CLI = path.resolve(import.meta.dirname, "..", "..", "dist", "cli.js");
 
 function runCli(args: string[]) {
   return spawnSync(process.execPath, [CLI, ...args], {

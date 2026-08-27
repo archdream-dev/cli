@@ -4,8 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
-import { generate } from "../src/generate.js";
-import { loadArchitectures } from "../src/load-architectures.js";
+import { generate } from "../main/generate.js";
+import { loadArchitectures } from "../main/load-architectures.js";
 
 function makeTempDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "archdream-test-"));

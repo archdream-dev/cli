@@ -6,7 +6,7 @@
     "moduleResolution": "NodeNext",
     "types": ["node"],
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDir": "src/main",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -17,5 +17,5 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/main/**/*"]
 }
