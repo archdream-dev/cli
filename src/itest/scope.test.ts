@@ -14,9 +14,9 @@ import {
   renameScope,
   saveArchitecture,
   snapshotToArchitecture,
-} from "../src/snapshot.js";
+} from "../main/snapshot.js";
 
-const CLI = path.resolve(import.meta.dirname, "..", "dist", "cli.js");
+const CLI = path.resolve(import.meta.dirname, "..", "..", "dist", "cli.js");
 
 function makeTempDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "archdream-scope-"));

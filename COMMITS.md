@@ -26,6 +26,43 @@ This project follows [Conventional Commits](https://www.conventionalcommits.org/
 
 Use the affected area, e.g. `feat(snapshot):`, `fix(cli):`, `chore(tests):`.
 
+## Branches
+
+Branch names must mirror commit conventions — the branch must suit the change just like the commit.
+
+**Format:**
+
+```
+<type>/<kebab-case-description>
+```
+
+or with optional scope:
+
+```
+<type>/<scope>-<kebab-case-description>
+```
+
+**Rules:**
+
+- Use the same `<type>` as the commit (`feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `style`)
+- Use kebab-case, lowercase, no spaces, no trailing punctuation
+- Keep it short and imperative — describe the change, not the ticket
+- One branch per logical change — don't mix unrelated work (same rule as commits)
+- Branch from `main` and open PR against `main`
+
+**Examples:**
+
+```
+feat/seed-gitkeep
+feat/scope-edit-remove
+refactor/project-restructure
+refactor/command-registry
+fix/cli-help-duplication
+chore/ignore-ds-store
+docs/readme-badges
+test/cli-help-coverage
+```
+
 ## Rules
 
 - Subject line: imperative mood, lowercase, no period, max ~72 chars

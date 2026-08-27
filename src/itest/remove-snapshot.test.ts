@@ -5,15 +5,15 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 
-import { getCustomDir } from "../src/snapshot.js";
+import { getCustomDir } from "../main/snapshot.js";
 import {
   listCustomSnapshots,
   removeSnapshot,
   saveArchitecture,
   snapshotToArchitecture,
-} from "../src/snapshot.js";
+} from "../main/snapshot.js";
 
-const CLI = path.resolve(import.meta.dirname, "..", "dist", "cli.js");
+const CLI = path.resolve(import.meta.dirname, "..", "..", "dist", "cli.js");
 
 function createTestSnapshot(id: string, scope: string): void {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "archdream-rm-"));
