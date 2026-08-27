@@ -40,6 +40,25 @@ test("snapshotToArchitecture throws on empty dir", () => {
   fs.rmSync(dir, { recursive: true });
 });
 
+test("snapshotToArchitecture ignores .gitkeep files", () => {
+  // Arrange
+  const dir = makeTempDir();
+  fs.mkdirSync(path.join(dir, "src/components"), { recursive: true });
+  fs.writeFileSync(path.join(dir, "src", ".gitkeep"), "");
+  fs.writeFileSync(path.join(dir, "src/components", ".gitkeep"), "");
+
+  try {
+    // Act
+    const arch = snapshotToArchitecture(dir, "gitkeep-snap", "frontend");
+
+    // Assert
+    // .gitkeep is a file, not a directory, so tree must not include it
+    assert.deepEqual(arch.tree, ["src", "src/components"]);
+  } finally {
+    fs.rmSync(dir, { recursive: true });
+  }
+});
+
 test("saveArchitecture writes yaml loadable by loader", () => {
   // Arrange
   const sourceDir = makeTempDir();

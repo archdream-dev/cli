@@ -86,6 +86,20 @@ export async function promptArchitecture(
   return architecture;
 }
 
+export async function promptGitkeep(): Promise<boolean> {
+  const choice = await p.confirm({
+    message: "Seed empty dirs with .gitkeep?",
+    initialValue: false,
+  });
+
+  if (p.isCancel(choice)) {
+    p.cancel("Cancelled.");
+    exit(0);
+  }
+
+  return Boolean(choice);
+}
+
 export async function confirmNonEmpty(targetDir: string): Promise<true> {
   if (isDirEmpty(targetDir)) return true;
 

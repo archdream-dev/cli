@@ -29,6 +29,15 @@ test("help prints usage and available commands", () => {
   assert.match(out, /archdream help/);
 });
 
+test("help includes --gitkeep flag", () => {
+  // Act
+  const result = runCli(["help"]);
+
+  // Assert
+  assert.match(result.stdout, /--gitkeep/);
+  assert.match(result.stdout, /Seed empty dirs with \.gitkeep/);
+});
+
 test("--help and -h behave like help", () => {
   // Act
   const longResult = runCli(["--help"]);
@@ -61,6 +70,48 @@ test("unknown option (flag) exits with error and suggests help", () => {
   assert.equal(result.status, 1);
   assert.match(result.stderr, /does not have option "--bogus"/);
   assert.match(result.stderr, /archdream help/);
+});
+
+test("--gitkeep is accepted as known flag", () => {
+  // Arrange
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "archdream-gitkeep-cli-"));
+  try {
+    // Act — start scaffold with --gitkeep; prompts will wait for input, we just verify no unknown-option error
+    const result = spawnSync(process.execPath, [CLI, "--gitkeep", "my-app"], {
+      encoding: "utf8",
+      cwd: tmp,
+      timeout: 15_000,
+    });
+    const combined = `${result.stdout}${result.stderr}`;
+    // Assert
+    assert.ok(
+      !combined.includes('does not have option "--gitkeep"'),
+      `should not report --gitkeep as unknown, got: ${combined}`,
+    );
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("--gitkeep after target is also accepted", () => {
+  // Arrange
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "archdream-gitkeep-cli2-"));
+  try {
+    // Act
+    const result = spawnSync(process.execPath, [CLI, "my-app", "--gitkeep"], {
+      encoding: "utf8",
+      cwd: tmp,
+      timeout: 15_000,
+    });
+    const combined = `${result.stdout}${result.stderr}`;
+    // Assert
+    assert.ok(
+      !combined.includes('does not have option "--gitkeep"'),
+      `should not report --gitkeep as unknown, got: ${combined}`,
+    );
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });
 
 test("non-existent directory is treated as target dir, not a command", () => {

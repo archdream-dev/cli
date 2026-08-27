@@ -17,9 +17,13 @@ export interface ArchitectureYaml {
   tree?: string[];
 }
 
+export interface GenerateOptions {
+  gitkeep?: boolean;
+}
+
 export interface GenerateResult {
-  created: { dirs: string[] };
-  skipped: { dirs: string[] };
+  created: { dirs: string[]; files: string[] };
+  skipped: { dirs: string[]; files: string[] };
 }
 
 export const SCOPE_LABELS: Partial<Record<Scope, string>> = {
