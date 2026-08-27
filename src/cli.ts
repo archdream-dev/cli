@@ -7,8 +7,26 @@ import * as p from "@clack/prompts";
 
 import { generate } from "./generate.js";
 import { getScopes, loadArchitectures } from "./load-architectures.js";
-import { confirmNonEmpty, promptArchitecture, promptGitkeep, promptScope, sanitizeScopeName } from "./prompts.js";
-import { listCustomSnapshots, removeSnapshot, saveArchitecture, snapshotToArchitecture } from "./snapshot.js";
+import {
+  confirmNonEmpty,
+  confirmScopeDelete,
+  promptArchitecture,
+  promptCustomScope,
+  promptEditAction,
+  promptGitkeep,
+  promptScope,
+  promptScopeRename,
+  sanitizeScopeName,
+} from "./prompts.js";
+import {
+  countSnapshotsInScope,
+  listCustomSnapshots,
+  removeScope,
+  removeSnapshot,
+  renameScope,
+  saveArchitecture,
+  snapshotToArchitecture,
+} from "./snapshot.js";
 import { scopeLabel, type Architecture, type Scope } from "./types.js";
 
 function printArchitectures(architectures: Architecture[]): void {
@@ -117,6 +135,66 @@ async function removeSnapshotCommand(
   }
 }
 
+async function removeScopeCommand(name: string | undefined): Promise<void> {
+  let scope = name ? sanitizeScopeName(name) : "";
+  if (!scope) {
+    if (name) {
+      console.error(`Invalid scope name: ${name}`);
+      process.exit(1);
+    }
+    scope = await promptCustomScope("Choose a scope to remove");
+  }
+  if (!scope) {
+    p.cancel("Scope name is required.");
+    process.exit(1);
+  }
+  try {
+    const count = countSnapshotsInScope(scope);
+    if (count > 0) {
+      await confirmScopeDelete(scope, count);
+    }
+    const dir = removeScope(scope);
+    p.outro(`Removed scope: ${dir}${count ? ` (${count} snapshot(s))` : ""}`);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    p.cancel(message);
+    process.exit(1);
+  }
+}
+
+async function editScopeCommand(name: string | undefined): Promise<void> {
+  let scope = name ? sanitizeScopeName(name) : "";
+  if (!scope) {
+    if (name) {
+      console.error(`Invalid scope name: ${name}`);
+      process.exit(1);
+    }
+    scope = await promptCustomScope("Choose a scope to edit");
+  }
+  if (!scope) {
+    p.cancel("Scope name is required.");
+    process.exit(1);
+  }
+  try {
+    const action = await promptEditAction();
+    if (action === "delete") {
+      const count = countSnapshotsInScope(scope);
+      if (count > 0) await confirmScopeDelete(scope, count);
+      const dir = removeScope(scope);
+      p.outro(`Removed scope: ${dir}${count ? ` (${count} snapshot(s))` : ""}`);
+      return;
+    }
+    // rename
+    const newScope = await promptScopeRename(scope);
+    const { oldPath, newPath } = renameScope(scope, newScope);
+    p.outro(`Renamed scope: ${oldPath} → ${newPath}`);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    p.cancel(message);
+    process.exit(1);
+  }
+}
+
 function printHelp(): void {  console.log(`Archdream CLI - scaffold folder structures from architecture presets
 
 Usage:
@@ -124,9 +202,10 @@ Usage:
   archdream list                      List all available architectures
   archdream create snapshot [name] [target-dir] [--scope <scope>]
                                        Save the target's folder structure as a reusable architecture
-                                       (defaults: name = current folder name, target = current directory)
   archdream remove snapshot [name] [--scope <scope>]
-                                       Delete a custom snapshot (interactive picker if name is omitted)
+                                       Delete a custom snapshot (interactive picker if name omitted)
+  archdream remove scope [name]        Delete a custom scope (builtin protected, confirms if not empty)
+  archdream edit scope [name]          Rename or delete a custom scope (interactive picker)
   archdream help                      Show this help message
 
 Options:
@@ -138,6 +217,8 @@ Examples:
   archdream create snapshot my-backend my-project
   archdream create snapshot            Snapshot current directory as <folder-name>
   archdream remove snapshot my-backend --scope backend
+  archdream remove scope my-custom
+  archdream edit scope my-custom
 `);
 }
 
@@ -182,14 +263,29 @@ async function main(): Promise<void> {
   }
 
   if (command === "remove") {
-    if (args[1] !== "snapshot") {
-      console.error(
-        `Unknown subcommand: archdream remove ${args[1] ?? ""}\nDid you mean "archdream remove snapshot <name>"? Run "archdream help" for usage.`,
-      );
-      process.exit(1);
+    if (args[1] === "snapshot") {
+      await removeSnapshotCommand(args[2], scopeArg);
+      return;
     }
-    await removeSnapshotCommand(args[2], scopeArg);
-    return;
+    if (args[1] === "scope") {
+      await removeScopeCommand(args[2]);
+      return;
+    }
+    console.error(
+      `Unknown subcommand: archdream remove ${args[1] ?? ""}\nDid you mean "archdream remove snapshot <name>" or "archdream remove scope <name>"? Run "archdream help" for usage.`,
+    );
+    process.exit(1);
+  }
+
+  if (command === "edit") {
+    if (args[1] === "scope") {
+      await editScopeCommand(args[2]);
+      return;
+    }
+    console.error(
+      `Unknown subcommand: archdream ${command} ${args[1] ?? ""}\nDid you mean "archdream edit scope <name>"? Run "archdream help" for usage.`,
+    );
+    process.exit(1);
   }
 
   if (command && command.startsWith("-")) {
