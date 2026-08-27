@@ -123,3 +123,122 @@ test("generate only adds missing dirs to existing structure", () => {
     removeTempDir(targetDir);
   }
 });
+
+test("generate with gitkeep seeds .gitkeep in every created dir", () => {
+  // Arrange
+  const arch = loadArchitectures({ scope: "backend" }).find((a) => a.id === "layered");
+  assert.ok(arch);
+  const targetDir = makeTempDir();
+
+  try {
+    // Act
+    const { created, skipped } = generate(arch, targetDir, { gitkeep: true });
+
+    // Assert
+    assert.deepEqual(created.dirs.sort(), [...arch.tree].sort());
+    assert.deepEqual(skipped.dirs, []);
+    assert.deepEqual(created.files.sort(), arch.tree.map((d) => `${d}/.gitkeep`).sort());
+    assert.deepEqual(skipped.files, []);
+    for (const dir of arch.tree) {
+      const gitkeepPath = path.join(targetDir, dir, ".gitkeep");
+      assert.ok(fs.existsSync(gitkeepPath), `expected .gitkeep at ${dir}/.gitkeep`);
+      assert.equal(fs.readFileSync(gitkeepPath, "utf8"), "");
+    }
+  } finally {
+    removeTempDir(targetDir);
+  }
+});
+
+test("generate with gitkeep:false creates no .gitkeep files", () => {
+  // Arrange
+  const arch = loadArchitectures({ scope: "backend" }).find((a) => a.id === "layered");
+  assert.ok(arch);
+  const targetDir = makeTempDir();
+
+  try {
+    // Act
+    const { created, skipped } = generate(arch, targetDir, { gitkeep: false });
+
+    // Assert
+    assert.deepEqual(created.files, []);
+    assert.deepEqual(skipped.files, []);
+    for (const dir of arch.tree) {
+      assert.ok(!fs.existsSync(path.join(targetDir, dir, ".gitkeep")));
+    }
+  } finally {
+    removeTempDir(targetDir);
+  }
+});
+
+test("generate with gitkeep seeds empty skipped dirs but skips non-empty", () => {
+  // Arrange
+  const arch = loadArchitectures({ scope: "backend" }).find((a) => a.id === "layered");
+  assert.ok(arch);
+  const targetDir = makeTempDir();
+  // config will be empty -> should get .gitkeep
+  // controller will be non-empty -> should NOT get .gitkeep
+  fs.mkdirSync(path.join(targetDir, "config"), { recursive: true });
+  fs.mkdirSync(path.join(targetDir, "controller"), { recursive: true });
+  fs.writeFileSync(path.join(targetDir, "controller", "README.md"), "hi");
+
+  try {
+    // Act
+    const { created, skipped } = generate(arch, targetDir, { gitkeep: true });
+
+    // Assert
+    assert.ok(skipped.dirs.includes("config"));
+    assert.ok(skipped.dirs.includes("controller"));
+    assert.ok(created.files.includes("config/.gitkeep"), "empty skipped dir should be seeded");
+    assert.ok(fs.existsSync(path.join(targetDir, "config", ".gitkeep")));
+    assert.ok(skipped.files.includes("controller/.gitkeep"), "non-empty dir should be in skipped.files");
+    assert.ok(!fs.existsSync(path.join(targetDir, "controller", ".gitkeep")), "non-empty dir must not get .gitkeep");
+  } finally {
+    removeTempDir(targetDir);
+  }
+});
+
+test("generate with gitkeep is idempotent on second run", () => {
+  // Arrange
+  const arch = loadArchitectures({ scope: "backend" }).find((a) => a.id === "hexagonal");
+  assert.ok(arch);
+  const targetDir = makeTempDir();
+  generate(arch, targetDir, { gitkeep: true });
+
+  try {
+    // Act
+    const second = generate(arch, targetDir, { gitkeep: true });
+
+    // Assert
+    assert.deepEqual(second.created.dirs, []);
+    assert.deepEqual(second.created.files, []);
+    assert.deepEqual(second.skipped.dirs.sort(), [...arch.tree].sort());
+    assert.deepEqual(second.skipped.files.sort(), arch.tree.map((d) => `${d}/.gitkeep`).sort());
+    for (const dir of arch.tree) {
+      assert.ok(fs.existsSync(path.join(targetDir, dir, ".gitkeep")));
+    }
+  } finally {
+    removeTempDir(targetDir);
+  }
+});
+
+test("generate with gitkeep preserves existing .gitkeep and does not overwrite", () => {
+  // Arrange
+  const arch = loadArchitectures({ scope: "backend" }).find((a) => a.id === "layered");
+  assert.ok(arch);
+  const targetDir = makeTempDir();
+  fs.mkdirSync(path.join(targetDir, "config"), { recursive: true });
+  fs.writeFileSync(path.join(targetDir, "config", ".gitkeep"), "custom");
+
+  try {
+    // Act
+    const { created, skipped } = generate(arch, targetDir, { gitkeep: true });
+
+    // Assert
+    assert.equal(fs.readFileSync(path.join(targetDir, "config", ".gitkeep"), "utf8"), "custom");
+    assert.ok(skipped.files.includes("config/.gitkeep"));
+    assert.ok(!created.files.includes("config/.gitkeep"));
+    assert.ok(skipped.dirs.includes("config"));
+  } finally {
+    removeTempDir(targetDir);
+  }
+});

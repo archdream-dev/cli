@@ -7,7 +7,7 @@ import * as p from "@clack/prompts";
 
 import { generate } from "./generate.js";
 import { getScopes, loadArchitectures } from "./load-architectures.js";
-import { confirmNonEmpty, promptArchitecture, promptScope, sanitizeScopeName } from "./prompts.js";
+import { confirmNonEmpty, promptArchitecture, promptGitkeep, promptScope, sanitizeScopeName } from "./prompts.js";
 import { listCustomSnapshots, removeSnapshot, saveArchitecture, snapshotToArchitecture } from "./snapshot.js";
 import { scopeLabel, type Architecture, type Scope } from "./types.js";
 
@@ -120,17 +120,21 @@ async function removeSnapshotCommand(
 function printHelp(): void {  console.log(`Archdream CLI - scaffold folder structures from architecture presets
 
 Usage:
-  archdream [target-dir]              Scaffold a folder structure (dir is created if missing)
+  archdream [target-dir] [--gitkeep]  Scaffold a folder structure (dir is created if missing)
   archdream list                      List all available architectures
   archdream create snapshot [name] [target-dir] [--scope <scope>]
-                                      Save the target's folder structure as a reusable architecture
-                                      (defaults: name = current folder name, target = current directory)
+                                       Save the target's folder structure as a reusable architecture
+                                       (defaults: name = current folder name, target = current directory)
   archdream remove snapshot [name] [--scope <scope>]
-                                      Delete a custom snapshot (interactive picker if name is omitted)
+                                       Delete a custom snapshot (interactive picker if name is omitted)
   archdream help                      Show this help message
+
+Options:
+  --gitkeep                            Seed empty dirs with .gitkeep (also prompted interactively)
 
 Examples:
   archdream my-app
+  archdream my-app --gitkeep
   archdream create snapshot my-backend my-project
   archdream create snapshot            Snapshot current directory as <folder-name>
   archdream remove snapshot my-backend --scope backend
@@ -141,6 +145,8 @@ async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const scopeFlagIndex = args.indexOf("--scope");
   const scopeArg = scopeFlagIndex !== -1 ? args.splice(scopeFlagIndex, 2)[1] : undefined;
+  const gitkeepFlagIndex = args.indexOf("--gitkeep");
+  const gitkeepFlag = gitkeepFlagIndex !== -1 ? Boolean(args.splice(gitkeepFlagIndex, 1)) : undefined;
   const command = args[0];
   const architectures = loadOrExit();
 
@@ -210,10 +216,12 @@ async function main(): Promise<void> {
 
   const architecture = await promptArchitecture(scopedArchitectures);
 
+  const gitkeep = gitkeepFlag ?? (await promptGitkeep());
+
   const spinner = p.spinner();
   spinner.start(`Generating ${architecture.name}…`);
 
-  const { created, skipped } = generate(architecture, targetDir);
+  const { created, skipped } = generate(architecture, targetDir, { gitkeep });
 
   spinner.stop("Done.");
 
@@ -222,6 +230,7 @@ async function main(): Promise<void> {
       `Target: ${targetDir}`,
       `Scope: ${scopeLabel(architecture.scope)}`,
       `Architecture: ${architecture.name}`,
+      `Gitkeep: ${gitkeep ? "yes" : "no"}`,
       "",
       created.dirs.length ? `Created dirs:\n  ${created.dirs.join("\n  ")}` : "",
       skipped.dirs.length
